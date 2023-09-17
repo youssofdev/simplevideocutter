@@ -2,7 +2,17 @@ import moviepy.editor as mp
 import os
 import random
 
-def cut_video(input_file, output_folder='default', target_duration=10*60, clip_duration=5, clips_to_keep=1):
+def get_output_folder():
+    default_folder = os.path.join(os.path.expanduser("~"), 'Videos', 'Captures', 'Output')
+    user_folder = input(f"Enter the path to the output folder or press Enter to use the default ({default_folder}): ")
+    return user_folder if user_folder.strip() else default_folder
+
+def get_clip_settings():
+    min_clip_duration = int(input("Enter the minimum clip duration in seconds (default is 4 seconds): ") or 4)
+    max_clip_duration = int(input("Enter the maximum clip duration in seconds (default is 7 seconds): ") or 7)
+    return min_clip_duration, max_clip_duration
+
+def cut_video(input_file, output_folder='default', target_duration=10*60, min_clip_duration=4, max_clip_duration=7, clips_to_keep=1):
     # Load the video
     video = mp.VideoFileClip(input_file)
     
@@ -14,7 +24,7 @@ def cut_video(input_file, output_folder='default', target_duration=10*60, clip_d
     
     # Use the default output folder if specified
     if output_folder.lower() == 'default':
-        output_folder = os.path.join(os.path.expanduser("~"), 'Videos', 'Captures', 'Output')
+        output_folder = get_output_folder()
     
     # Ensure the output folder exists, create it if necessary
     os.makedirs(output_folder, exist_ok=True)
@@ -23,10 +33,10 @@ def cut_video(input_file, output_folder='default', target_duration=10*60, clip_d
     output_filename = os.path.join(output_folder, 'output.mp4')
     
     # Calculate the total number of clips needed
-    num_clips_needed = int(target_duration / clip_duration)
+    num_clips_needed = int(target_duration / min_clip_duration)
     
     # Calculate the total number of clips in the original video
-    num_original_clips = int(total_duration / clip_duration)
+    num_original_clips = int(total_duration / min_clip_duration)
     
     # Calculate the number of clips to delete
     num_clips_to_delete = num_original_clips - num_clips_needed
@@ -36,6 +46,9 @@ def cut_video(input_file, output_folder='default', target_duration=10*60, clip_d
     current_time = 0
     
     while current_time < total_duration:
+        # Generate a random clip duration between min_clip_duration and max_clip_duration
+        clip_duration = random.uniform(min_clip_duration, max_clip_duration)
+        
         # Calculate the end time of the clip
         end_time = min(current_time + clip_duration, total_duration)
         
@@ -60,5 +73,6 @@ def cut_video(input_file, output_folder='default', target_duration=10*60, clip_d
 
 if __name__ == "__main__":
     input_file = input("Enter the path to the input video (mp4): ")
-    output_folder = input("Enter the path to the output folder or type 'default' for default folder: ")
-    cut_video(input_file, output_folder=output_folder)
+    output_folder = get_output_folder()
+    min_clip_duration, max_clip_duration = get_clip_settings()
+    cut_video(input_file, output_folder=output_folder, min_clip_duration=min_clip_duration, max_clip_duration=max_clip_duration)
