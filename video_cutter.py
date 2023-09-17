@@ -1,6 +1,8 @@
 import moviepy.editor as mp
 import os
 import random
+from tqdm import tqdm
+import time
 
 def get_output_folder():
     default_folder = os.path.join(os.path.expanduser("~"), 'Videos', 'Captures', 'Output')
@@ -45,6 +47,9 @@ def cut_video(input_file, output_folder='default', target_duration=10*60, min_cl
     clips = []
     current_time = 0
     
+    # Initialize tqdm for progress bar
+    progress_bar = tqdm(total=num_clips_needed, desc="Editing Video", unit=" clip")
+    
     while current_time < total_duration:
         # Generate a random clip duration between min_clip_duration and max_clip_duration
         clip_duration = random.uniform(min_clip_duration, max_clip_duration)
@@ -60,6 +65,12 @@ def cut_video(input_file, output_folder='default', target_duration=10*60, min_cl
         
         # Update current_time
         current_time = end_time
+        
+        # Update progress bar
+        progress_bar.update(1)
+    
+    # Close the progress bar
+    progress_bar.close()
     
     # Delete the specified number of clips to meet the target duration
     for _ in range(num_clips_to_delete):
@@ -70,9 +81,22 @@ def cut_video(input_file, output_folder='default', target_duration=10*60, min_cl
     
     # Write the final video to the output file
     final_video.write_videofile(output_filename, codec="libx264")
+    
+    # Display a completion message
+    print("\nVideo editing completed!")
 
 if __name__ == "__main__":
     input_file = input("Enter the path to the input video (mp4): ")
     output_folder = get_output_folder()
     min_clip_duration, max_clip_duration = get_clip_settings()
+    
+    print("Editing video...")
+    
+    # Measure the time taken for video editing
+    start_time = time.time()
+    
     cut_video(input_file, output_folder=output_folder, min_clip_duration=min_clip_duration, max_clip_duration=max_clip_duration)
+    
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print(f"Total time taken: {elapsed_time:.2f} seconds")
