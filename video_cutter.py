@@ -10,11 +10,15 @@ def get_output_folder():
     return user_folder if user_folder.strip() else default_folder
 
 def get_clip_settings():
-    min_clip_duration = int(input("Enter the minimum clip duration in seconds (default is 4 seconds): ") or 4)
+    min_clip_duration = int(input("Enter the minimum clip duration in seconds (default is 3 seconds): ") or 3)
     max_clip_duration = int(input("Enter the maximum clip duration in seconds (default is 7 seconds): ") or 7)
     return min_clip_duration, max_clip_duration
 
-def cut_video(input_file, output_folder='default', target_duration=10*60, min_clip_duration=4, max_clip_duration=7, clips_to_keep=1):
+def get_target_duration():
+    target_duration_minutes = int(input("Enter the target video length in minutes (default is 10 minutes): ") or 10)
+    return target_duration_minutes * 60  # Convert to seconds
+
+def cut_video(input_file, output_folder='default', min_clip_duration=3, max_clip_duration=7):
     # Load the video
     video = mp.VideoFileClip(input_file)
     
@@ -34,25 +38,16 @@ def cut_video(input_file, output_folder='default', target_duration=10*60, min_cl
     # Generate a random output filename
     output_filename = os.path.join(output_folder, 'output.mp4')
     
-    # Calculate the total number of clips needed
-    num_clips_needed = int(target_duration / min_clip_duration)
-    
-    # Calculate the total number of clips in the original video
-    num_original_clips = int(total_duration / min_clip_duration)
-    
-    # Calculate the number of clips to delete
-    num_clips_to_delete = num_original_clips - num_clips_needed
-    
     # Initialize variables
     clips = []
     current_time = 0
     
     # Initialize tqdm for progress bar
-    progress_bar = tqdm(total=num_clips_needed, desc="Editing Video", unit=" clip")
+    progress_bar = tqdm(total=total_duration, desc="Editing Video", unit=" sec")
     
     while current_time < total_duration:
         # Generate a random clip duration between min_clip_duration and max_clip_duration
-        clip_duration = random.uniform(min_clip_duration, max_clip_duration)
+        clip_duration = random.randint(min_clip_duration, max_clip_duration)
         
         # Calculate the end time of the clip
         end_time = min(current_time + clip_duration, total_duration)
@@ -67,14 +62,20 @@ def cut_video(input_file, output_folder='default', target_duration=10*60, min_cl
         current_time = end_time
         
         # Update progress bar
-        progress_bar.update(1)
+        progress_bar.update(clip_duration)
     
     # Close the progress bar
     progress_bar.close()
     
-    # Delete the specified number of clips to meet the target duration
-    for _ in range(num_clips_to_delete):
-        del clips[random.randint(0, len(clips) - 1)]
+    # Delete the majority of clips to create the summary
+    num_clips_to_keep = len(clips) // 6  # Keep 1 clip for every 6 clips
+    if num_clips_to_keep == 0:
+        num_clips_to_keep = 1  # Keep at least 1 clip
+    clips_to_delete = len(clips) - num_clips_to_keep
+    
+    if clips_to_delete > 0:
+        for _ in range(clips_to_delete):
+            del clips[random.randint(0, len(clips) - 1)]
     
     # Merge the clips to create one video
     final_video = mp.concatenate_videoclips(clips, method="compose")
