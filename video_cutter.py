@@ -18,7 +18,7 @@ def get_target_duration():
     target_duration_minutes = int(input("Enter the target video length in minutes (default is 10 minutes): ") or 10)
     return target_duration_minutes * 60  # Convert to seconds
 
-def cut_video(input_file, output_folder='default', min_clip_duration=3, max_clip_duration=7):
+def cut_video(input_file, output_folder='default', min_clip_duration=3, max_clip_duration=7, target_duration=600, flip_horizontal=False):
     # Load the video
     video = mp.VideoFileClip(input_file)
     
@@ -43,14 +43,14 @@ def cut_video(input_file, output_folder='default', min_clip_duration=3, max_clip
     current_time = 0
     
     # Initialize tqdm for progress bar
-    progress_bar = tqdm(total=total_duration, desc="Editing Video", unit=" sec")
+    progress_bar = tqdm(total=target_duration, desc="Editing Video", unit=" sec")
     
-    while current_time < total_duration:
+    while current_time < target_duration:
         # Generate a random clip duration between min_clip_duration and max_clip_duration
         clip_duration = random.randint(min_clip_duration, max_clip_duration)
         
         # Calculate the end time of the clip
-        end_time = min(current_time + clip_duration, total_duration)
+        end_time = min(current_time + clip_duration, target_duration)
         
         # Create a subclip
         subclip = video.subclip(current_time, end_time)
@@ -80,6 +80,10 @@ def cut_video(input_file, output_folder='default', min_clip_duration=3, max_clip
     # Merge the clips to create one video
     final_video = mp.concatenate_videoclips(clips, method="compose")
     
+    if flip_horizontal:
+        # Flip the video horizontally
+        final_video = final_video.fx(mp.vfx.mirror_x)
+    
     # Write the final video to the output file
     final_video.write_videofile(output_filename, codec="libx264")
     
@@ -90,13 +94,17 @@ if __name__ == "__main__":
     input_file = input("Enter the path to the input video (mp4): ")
     output_folder = get_output_folder()
     min_clip_duration, max_clip_duration = get_clip_settings()
+    target_duration = get_target_duration()
+    
+    flip_option = input("Do you want to flip the video horizontally? (yes/no): ").lower()
+    flip_horizontal = flip_option == "yes"
     
     print("Editing video...")
     
     # Measure the time taken for video editing
     start_time = time.time()
     
-    cut_video(input_file, output_folder=output_folder, min_clip_duration=min_clip_duration, max_clip_duration=max_clip_duration)
+    cut_video(input_file, output_folder=output_folder, min_clip_duration=min_clip_duration, max_clip_duration=max_clip_duration, target_duration=target_duration, flip_horizontal=flip_horizontal)
     
     end_time = time.time()
     elapsed_time = end_time - start_time
